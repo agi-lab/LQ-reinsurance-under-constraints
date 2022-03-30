@@ -1,0 +1,175 @@
+---
+title: "Simulate Paths"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+# Parameters
+
+```{r}
+# Hyperparameters
+a <- 0.2
+b <- 0.5
+sigma <- 1.2
+T_ <- 5
+x <- 2
+k0 <- 5
+C0 <- 0
+epsilon <- 0.01
+nu <- 0.1
+
+# Derived parameters
+beta = -1*b/sigma
+## 
+k <- k0 - (a-b)*T_
+C <- C0 - (a-b)*T_
+
+ # Simulation parameters
+seed = 777
+Nseq = 1000
+```
+
+# Optimal Parameters
+
+```{r}
+source("functions/get_parameters.R")
+
+# Unconstrained
+lambda_U <- par_unconstrained(a, b, sigma, T_, x, k0, C0)$lambda_U
+
+# Constrained
+lambda_C <- par_constrained(a, b, sigma, T_, x, k0, C0)$lambda_C
+
+# Probability
+par_P <- par_prob_constraint(a, b, sigma, T_, x, k0, C0, epsilon)
+lambda_P <- par_P$lambda_P
+c_P <- par_P$c_P
+g1 <- par_P$g1
+g2 <- par_P$g2
+
+# ES in P
+par_E <- par_ES_constraint_P(a, b, sigma, T_, x, k0, C0, nu)
+lambda_S <- par_E$lambda_E
+gamma_S <- par_E$gamma_E
+h1 <- par_E$h1
+h2 <- par_E$h2
+
+# ES in Q
+par_Q <- par_ES_constraint_Q(a, b, sigma, T_, x, k0, C0, nu)
+lambda_Q <- par_Q$lambda_Q
+delta_Q <- par_Q$delta_Q
+
+optimal_par <- tibble(
+    lambda_U,
+    lambda_C,
+    lambda_P,
+    lambda_S,
+    gamma_S,
+    lambda_Q,
+    delta_Q
+)
+optimal_par
+```
+
+# Stylised Payout Graphs
+
+```{r}
+source("functions/payout_graphs.R")
+
+# Individual Graphs
+payout_unconstrained(a, b, sigma, T_, x, k0, C0)
+payout_forced_constraint(a, b, sigma, T_, x, k0, C0)
+payout_prob_constraint(a, b, sigma, T_, x, k0, C0, epsilon)
+payout_ES_constraint_P(a, b, sigma, T_, x, k0, C0, nu)
+payout_ES_constraint_Q(a, b, sigma, T_, x, k0, C0, nu)
+
+
+
+pdf(file="paper/figure0.pdf")
+payout_unconstrained(a, b, sigma, T_, x, k0, C0)
+dev.off()
+# paper graphs
+pdf(file="paper/figure1.pdf")
+payout_forced_constraint(a, b, sigma, T_, x, k0, C0)
+dev.off()
+pdf(file="paper/figure2.pdf")
+payout_prob_constraint(a, b, sigma, T_, x, k0, C0, epsilon)
+dev.off()
+pdf(file="paper/figure3.pdf")
+payout_ES_constraint_P(a, b, sigma, T_, x, k0, C0, nu)
+dev.off()
+pdf(file="paper/figure4.pdf")
+payout_ES_constraint_Q(a, b, sigma, T_, x, k0, C0, nu)
+dev.off()
+
+# Combined Graphs
+# epsilon and nu only need to be included if PC or ESC_ is True respectively
+payout_graphs(a, b, sigma, T_, x, k0, C0,
+              epsilon = epsilon, nu = nu,
+              UC = T, FC = T, PC = T, ESC_P = T, ESC_Q = T)
+payout_graphs(a, b, sigma, T_, x, k0, C0,
+              epsilon = epsilon, nu = nu,
+              FC = T, ESC_Q=T)
+payout_graphs(a, b, sigma, T_, x, k0, C0,
+              epsilon = epsilon, nu = nu,
+              PC = T, ESC_P=T)
+
+
+# paper graphs
+pdf(file="paper/figure5a.pdf")
+payout_graphs(a, b, sigma, T_, x, k0, C0,
+              epsilon = epsilon, nu = nu,
+              FC = T, ESC_Q=T)
+dev.off()
+pdf(file="paper/figure5b.pdf")
+payout_graphs(a, b, sigma, T_, x, k0, C0,
+              epsilon = epsilon, nu = nu,
+              UC = T,PC = T, ESC_P=T)
+dev.off()
+```
+
+# Simulate Paths
+
+```{r}
+source("functions/get_paths.R")
+seed = 2020
+
+# # Paths for Xpi
+# paths_X <- calc_paths_X(seed, Nseq,
+#                         a, b, sigma, T_, x, k0, C0, epsilon, nu)
+# plot_paths_X(paths_X)
+# 
+# 
+# # Paths for pi
+# paths_pi <- calc_paths_pi(seed, Nseq,
+#                           a, b, sigma, T_, x, k0, C0, epsilon, nu)
+# plot_paths_pi(paths_pi)
+# 
+# 
+# # Implied paths for Xpi calculated using pi
+# paths_pi_check <- calc_paths_pi_check(seed, Nseq,
+#                                       a, b, sigma, T_, x, k0, C0, epsilon, nu)
+# plot_paths_pi_check(paths_pi_check)
+
+# Plot both Xpi and pi (get_paths2)
+plot_paths_X_pi(seed, Nseq)
+
+# paper graphs
+ pdf(file="paper/figure6.pdf")
+ plot_paths_X_pi(2020, Nseq)
+ dev.off()
+ pdf(file="paper/figure7.pdf")
+ plot_paths_X_pi(2015, Nseq)
+ dev.off()
+pdf(file="paper/figure8.pdf")
+plot_paths_X_pi(1994, Nseq)
+dev.off()
+pdf(file="paper/figure9.pdf")
+plot_paths_X_pi(2, Nseq)
+dev.off()
+
+
+```
